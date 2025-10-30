@@ -1,0 +1,12 @@
+services:
+  app_service:
+    network_mode: host
+    build:
+      network: host
+      context: .
+    working_dir: /app
+    volumes:
+      - ./:/app
+
+    tty: true
+    command: bash
