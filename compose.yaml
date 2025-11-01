@@ -1,12 +1,16 @@
 services:
-  app_service:
+  lg_agent_service:
     network_mode: host
     build:
       network: host
       context: .
-    working_dir: /app
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+        DIR: "lg_agent"
+    working_dir: /lg_agent
     volumes:
-      - ./:/app
+      - ./:/lg_agent
 
     tty: true
     command: bash

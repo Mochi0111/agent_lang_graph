@@ -15,17 +15,21 @@ RUN apt-get update && \
 ENV UV_SYSTEM_PYTHON=true \
     UV_LINK_MODE=copy
 
-## uvインストール
+## uvインストール. どの権限でも(システム全体で)uvが使えるように"/usr/local/bin"にコピー
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
-RUN sh /uv-installer.sh && rm /uv-installer.sh
+RUN sh /uv-installer.sh && \
+    mv /root/.local/bin/uv /usr/local/bin/ && \
+    rm /uv-installer.sh
 
 # ## ホストのUID/GIDでユーザー作成 ※ターミナルに"id"を実行すると確認可能
-# RUN groupadd -r -g 1000 appgroup && \
-#     useradd -r -u 1000 -g appgroup appuser
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} appgroup && \
+    useradd -m -u ${UID} -g ${GID} -s /bin/bash appuser
 
 ## 任意のディレクトリパス + 作業ディレクトリの所有者を設定
-WORKDIR /app
-# RUN chown appgroup:appuser /app
+ARG DIR
+WORKDIR /${DIR}
 
 COPY . .
 
@@ -34,6 +38,7 @@ COPY . .
 #     uv pip install -r pyproject.toml
 
 # # 非rootユーザで実行
-# USER appuser
+RUN chown -R appuser:appgroup /${DIR}
+USER appuser
 
 CMD ["bash"]
