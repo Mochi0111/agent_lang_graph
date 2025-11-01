@@ -7,10 +7,10 @@ services:
       args:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
-        DIR: "lg_agent"
-    working_dir: /lg_agent
+        DIR: "${DIR}"
+    working_dir: /${DIR}
     volumes:
-      - ./:/lg_agent
+      - ./:/${DIR}
 
     tty: true
     command: bash
