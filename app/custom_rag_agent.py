@@ -151,3 +151,79 @@ input = {
     )
 }
 grade_documents(input)
+
+### 4.3 Confirm that the relevant documents are classified
+input = {
+    "messages": convert_to_messages(
+        [
+            {
+                "role": "user",
+                "content": "What does Lilian Weng say about types of rewards hacking?",
+            },
+            {
+                "role": "assistant", 
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "1",
+                        "name": "retrieve_blog_posts",
+                        "args": {"query"< "types of reward hacking"},
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "content": "reward hacking can be categorized into two types: environment or goal misspecification, and reward tampering",
+                "tool_call_id": "1"
+            }
+        ]
+    )
+}
+grade_documents(input)
+
+
+### 5. Rewrite question
+### 5.1, Build the rewrite_question node to improve user question.
+REWRITE_PROMPT = (
+    "Look at the input and try to reason about the underlying semantic intent / meaning.\n"
+    "Here is the initial question:"
+    "\n ------- \n"
+    "{question}"
+    "\n ------- \n"
+    "Formulate an improved question:"
+)
+
+def rewrite_question(state: MessagesState):
+    """Rewrite the original user question."""
+    messages = state["messages"]
+    question = messages[0].content
+    prompt = REWRITE_PROMPT.format(question=question)
+    response = response_model.invoke([{"role": "user", "content": prompt}])
+    return {"messages": [{"role": "user", "content": response.content}]}
+
+
+### 5.3 Tyr it out
+input = {
+    "messages": convert_to_messages(
+        [
+            {
+                "role": "user",
+                "content": "What does Lilian Weng say about types of rewards hacking?"
+            },
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "1",
+                        "name": "retrieve_blog_posts",
+                        "args": {"query": "types of reward hacking"},
+                    }
+                ],
+            },
+            {"role": "tool", "content": "meow", "tool_call_id": "1"},
+        ]
+    )
+}
+response = rewrite_question(input)
+print(response["messages"][-1]["content"])
