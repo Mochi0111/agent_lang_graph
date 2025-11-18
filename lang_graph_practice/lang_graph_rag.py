@@ -5,6 +5,7 @@ from typing import TypedDict, List, Dict
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
+from langgraph.graph import StateGraph
 
 # =========================
 # 各オブジェクト初期化
@@ -25,14 +26,16 @@ class RAGState(TypedDict):
 
 # =========================
 # RAGの各処理ノード(関数として定義)
+# =========================
 def extract_query(state: RAGState, config: RunnableConfig) -> Dict:
     # 自身で実装
-    return {
-        "messages": [],
-        "query": "",
-        "search_results": [],
-        "context": "",
-    }
+    # return {
+    #     "messages": [],
+    #     "query": "",
+    #     "search_results": [],
+    #     "context": "",
+    # }
+    pass
 
 def perform_search(state: RAGState, config: RunnableConfig) -> Dict:
     # 自身で実装
@@ -50,9 +53,21 @@ def direct_answer(state: RAGState, config: RunnableConfig) -> Dict:
     # LLMの知識だけで回答するノード
     pass
 
-# ================================
+# =========================
+# グラフビルダー初期化・ノードの追加
+# =========================
+graph_builder = StateGraph(RAGState)
+graph_builder.add_node("extract_query_node", extract_query)
+graph_builder.add_node("perform_search_node", perform_search)
+graph_builder.add_node("prepare_context_node", prepare_context)
+graph_builder.add_node("generate_answer_node", generate_answer)
+graph_builder.add_node("direct_answer_node", direct_answer)
+
+graph_builder.set_entry_point("extract_query_node")
+
+# =========================
 # 検索の必要性を判断するルーター関数
-# ================================
+# =========================
 def search_router(state: RAGState) -> str:
     last_message = state["messages"][-1].content
     needs_search_response = search_necessity_llm.invoke(
@@ -66,7 +81,13 @@ def search_router(state: RAGState) -> str:
     else:
         print(">>> 判断: 検索は不要")
         return "direct_answer"
-    
 
-# ===============================
-# 
+# =========================
+# 条件付きエッジの追加
+# =========================
+
+
+
+# =========================
+# グラフのコンパイル・実行
+# =========================
