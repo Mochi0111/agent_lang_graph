@@ -5,7 +5,7 @@ from typing import TypedDict, List, Dict
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, END
 
 # =========================
 # 各オブジェクト初期化
@@ -85,9 +85,24 @@ def search_router(state: RAGState) -> str:
 # =========================
 # 条件付きエッジの追加
 # =========================
+graph_builder.add_conditional_edges(
+    "extract_query_node",
+    search_router,
+    {
+        "direct_answer_node": "direct_answer_node",
+        "perform_search_node": "perform_search_node"
+    }
+)
 
-
+graph_builder.add_edge("direct_answer_node", END)
+graph_builder.add_edge("perform_search_node", "prepare_context_node")
+graph_builder.add_edge("prepare_context_node", "generate_answer_node")
+graph_builder.add_edge("generate_answer_node", END)
 
 # =========================
 # グラフのコンパイル・実行
 # =========================
+graph = graph_builder.compile()
+
+from IPython.display import Image, display
+display(Image(graph.get_graph().draw_mermaid_png(output_file_path="/lg_agent/lang_graph_practice/lang_graph_rag.png")))

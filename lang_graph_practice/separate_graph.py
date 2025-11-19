@@ -44,7 +44,7 @@ graph_builder.add_edge("node3", "end_node")
 
 graph_builder.set_finish_point("end_node")
 
-# gRAPHをコンパイル
+# graphをコンパイル
 graph = graph_builder.compile()
 
 # Graphの実行(引数にはStateの初期値を渡す)
