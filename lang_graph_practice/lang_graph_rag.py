@@ -1,18 +1,26 @@
 # 参考URL
 # https://arpable.com/artificial-intelligence/agent/langgraph-ai-agent/
 
+import os
+from dotenv import load_dotenv
 from typing import TypedDict, List, Dict
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
+
+# =========================
+# 環境変数設定
+# =========================
+load_dotenv("/lg_agent/.env", override=True)
 
 # =========================
 # 各オブジェクト初期化
 # =========================
 query_extractor_llm = None
 vector_db = None
-llm = None
+llm = ChatOpenAI(model="gpt-5-nano-2025-08-07")
 search_necessity_llm = None # 軽量モデルが推奨
 
 # =========================
@@ -104,5 +112,5 @@ graph_builder.add_edge("generate_answer_node", END)
 # =========================
 graph = graph_builder.compile()
 
-from IPython.display import Image, display
-display(Image(graph.get_graph().draw_mermaid_png(output_file_path="/lg_agent/lang_graph_practice/lang_graph_rag.png")))
+# from IPython.display import Image, display
+# display(Image(graph.get_graph().draw_mermaid_png(output_file_path="/lg_agent/lang_graph_practice/lang_graph_rag.png")))
