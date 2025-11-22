@@ -4,7 +4,7 @@
 import os
 from dotenv import load_dotenv
 from typing import TypedDict, List, Dict
-from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
+from langchain_core.messages import BaseMessage, AIMessage, HumanMessage, SystemMessage
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
@@ -21,13 +21,13 @@ load_dotenv("/lg_agent/.env", override=True)
 query_extractor_llm = None
 vector_db = None
 llm = ChatOpenAI(model="gpt-5-nano-2025-08-07")
-search_necessity_llm = None # 軽量モデルが推奨
+search_necessity_llm = ChatOpenAI(model="gpt-5-nano-2025-08-07") # 軽量モデルが推奨
 
 # =========================
 # RAGシステムの状態定義
 # =========================
 class RAGState(TypedDict):
-    messages: List[BaseMessage]
+    messages: List[HumanMessage | AIMessage | SystemMessage]
     query: str
     search_results: List[Document]
     context: str
@@ -36,14 +36,9 @@ class RAGState(TypedDict):
 # RAGの各処理ノード(関数として定義)
 # =========================
 def extract_query(state: RAGState, config: RunnableConfig) -> Dict:
-    # 自身で実装
-    # return {
-    #     "messages": [],
-    #     "query": "",
-    #     "search_results": [],
-    #     "context": "",
-    # }
-    pass
+    print("質問してください。")
+    user_input = str(input())
+    state['messages'].append(HumanMessage(user_input))
 
 def perform_search(state: RAGState, config: RunnableConfig) -> Dict:
     # 自身で実装
@@ -58,8 +53,10 @@ def generate_answer(state: RAGState, config: RunnableConfig) -> Dict:
     pass
 
 def direct_answer(state: RAGState, config: RunnableConfig) -> Dict:
-    # LLMの知識だけで回答するノード
-    pass
+    """LLMの知識だけで回答するノード"""
+    last_message = state["messages"][-1].content
+    response = llm.invoke(f"次の内容について回答してください。: {last_message}")
+    print(response.content)
 
 # =========================
 # グラフビルダー初期化・ノードの追加
@@ -85,7 +82,7 @@ def search_router(state: RAGState) -> str:
     # LLMの応答の揺らぎを考慮
     if "はい" in needs_search_response.content or "必要" in needs_search_response.content:
         print(">>> 判断: 検索が必要")
-        return "extract_query"
+        return "perform_search"
     else:
         print(">>> 判断: 検索は不要")
         return "direct_answer"
@@ -97,8 +94,8 @@ graph_builder.add_conditional_edges(
     "extract_query_node",
     search_router,
     {
-        "direct_answer_node": "direct_answer_node",
-        "perform_search_node": "perform_search_node"
+        "direct_answer": "direct_answer_node",
+        "perform_search": "perform_search_node"
     }
 )
 
@@ -111,6 +108,16 @@ graph_builder.add_edge("generate_answer_node", END)
 # グラフのコンパイル・実行
 # =========================
 graph = graph_builder.compile()
+
+graph.invoke(
+    {
+        "messages": [],
+        "query": "",
+        "search_results": [],
+        "context": ""
+    }, 
+    debug=True
+)
 
 # from IPython.display import Image, display
 # display(Image(graph.get_graph().draw_mermaid_png(output_file_path="/lg_agent/lang_graph_practice/lang_graph_rag.png")))
